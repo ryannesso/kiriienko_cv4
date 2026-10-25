@@ -23,6 +23,7 @@
 #include "dma.h"
 #include "usart.h"
 #include "gpio.h"
+#include <stdio.h>
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -60,6 +61,7 @@ int main(void)
   MX_USART2_UART_Init();
 
   USART2_RegisterCallback(proccesDmaData);
+	char tx_message[160];
 
   while (1)
   {
@@ -74,8 +76,20 @@ int main(void)
 	   * Message format - "Valid string: %s, lower-case: %d, upper-case: %d"
 	   * Example message (what I wish to see in terminal) - Valid string: Platn15uborZnakov, lower-case: 13, upper-case: 2
 	   */
+	  if ((frame_ready != 0U) &&
+		  !LL_DMA_IsEnabledChannel(DMA1, LL_DMA_CHANNEL_7))
+	  {
+		  int length;
+		  frame_ready = 0U;
+		  length = snprintf(tx_message, sizeof(tx_message),
+				  "Valid string: %s, lower-case: %u\r\n",
+				  (char *)frame_text, (unsigned)lowercase_count);
+		  if (length > 0)
+		  {
+			  USART2_PutBuffer((uint8_t *)tx_message, (uint8_t)length);
+		  }
+	  }
 
-  	  	  	  //type your code here:
   }
   /* USER CODE END 3 */
 }
