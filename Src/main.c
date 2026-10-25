@@ -36,9 +36,11 @@ void SystemClock_Config(void);
 void proccesDmaData(uint8_t sign);
 
 
-/* Space for your global variables. */
-
-	// type your global variables here:
+static uint8_t frame_active = 0U;
+static uint8_t frame_text[DMA_USART2_BUFFER_SIZE];
+static uint8_t frame_length = 0U;
+static uint8_t lowercase_count = 0U;
+static volatile uint8_t frame_ready = 0U;
 
 
 int main(void)
@@ -57,9 +59,7 @@ int main(void)
   MX_DMA_Init();
   MX_USART2_UART_Init();
 
-  /* Space for your local variables, callback registration ...*/
-
-  	  //type your code here:
+  USART2_RegisterCallback(proccesDmaData);
 
   while (1)
   {
@@ -117,9 +117,46 @@ void SystemClock_Config(void)
  */
 void proccesDmaData(uint8_t sign)
 {
-	/* Process received data */
+	if (frame_active == 0U)
+	{
+		if (sign == '#')
+		{
+			frame_active = 1U;
+			frame_length = 0U;
+			lowercase_count = 0U;
+		}
+		return;
+	}
 
-		// type your algorithm here:
+	if (sign == '#')
+	{
+		/* A new start marker starts a new frame. */
+		frame_length = 0U;
+		lowercase_count = 0U;
+		return;
+	}
+
+	if (sign == '$')
+	{
+		frame_text[frame_length] = '\0';
+		frame_ready = 1U;
+		frame_active = 0U;
+		return;
+	}
+
+	/* Keep the temporary storage bounded until the task-specific 35-character
+	 * validation is added in a later step. */
+	if (frame_length >= (DMA_USART2_BUFFER_SIZE - 1U))
+	{
+		frame_active = 0U;
+		return;
+	}
+
+	frame_text[frame_length++] = sign;
+	if ((sign >= 'a') && (sign <= 'z'))
+	{
+		lowercase_count++;
+	}
 }
 
 
