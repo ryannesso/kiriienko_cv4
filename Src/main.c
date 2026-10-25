@@ -41,7 +41,8 @@ static uint8_t frame_active = 0U;
 static uint8_t frame_text[DMA_USART2_BUFFER_SIZE];
 static uint8_t frame_length = 0U;
 static uint8_t frame_characters_after_start = 0U;
-static uint8_t lowercase_count = 0U;
+static volatile uint8_t lowercase_count = 0U;
+static volatile uint8_t uppercase_count = 0U;
 static volatile uint8_t frame_ready = 0U;
 volatile uint32_t system_millis = 0U;
 
@@ -85,8 +86,9 @@ int main(void)
 		  int length;
 		  frame_ready = 0U;
 		  length = snprintf(tx_message, sizeof(tx_message),
-				  "Valid string: %s, lower-case: %u\r\n",
-				  (char *)frame_text, (unsigned)lowercase_count);
+				  "Valid string: %s, lower-case: %u, upper-case: %u\r\n",
+				  (char *)frame_text, (unsigned)lowercase_count,
+				  (unsigned)uppercase_count);
 		  if (length > 0)
 		  {
 			  USART2_PutBuffer((uint8_t *)tx_message, (uint8_t)length);
@@ -99,7 +101,7 @@ int main(void)
 		  uint16_t load_tenths = (uint16_t)((used_bytes * 1000U) /
 			  DMA_USART2_BUFFER_SIZE);
 		  int length = snprintf(tx_message, sizeof(tx_message),
-			  "Buffer capacity: %u bytes, occupied memory: %u bytes, load [in %%]: %u.%u%%\\r\\n",
+			  "Buffer capacity: %u bytes, occupied memory: %u bytes, load [in %%]: %u.%u%%\r\n",
 			  (unsigned)DMA_USART2_BUFFER_SIZE, (unsigned)used_bytes,
 			  (unsigned)(load_tenths / 10U), (unsigned)(load_tenths % 10U));
 		  if (length > 0)
@@ -158,6 +160,7 @@ void proccesDmaData(uint8_t sign)
 			frame_length = 0U;
 			frame_characters_after_start = 0U;
 			lowercase_count = 0U;
+			uppercase_count = 0U;
 		}
 		return;
 	}
@@ -168,6 +171,7 @@ void proccesDmaData(uint8_t sign)
 		frame_length = 0U;
 		frame_characters_after_start = 0U;
 		lowercase_count = 0U;
+		uppercase_count = 0U;
 		return;
 	}
 
@@ -200,6 +204,10 @@ void proccesDmaData(uint8_t sign)
 	if ((sign >= 'a') && (sign <= 'z'))
 	{
 		lowercase_count++;
+	}
+	else if ((sign >= 'A') && (sign <= 'Z'))
+	{
+		uppercase_count++;
 	}
 }
 

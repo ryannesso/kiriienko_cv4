@@ -142,6 +142,6 @@ seconds.
 | --- | --- |
 | `Hello` | The input is ignored because it has no start marker. |
 | `#abc$` | `Valid string: abc, lower-case: 3` is sent back. |
-| `#A1b$` | The message is accepted; only the lowercase `b` is counted at this stage. |
+| `#A1b$` | `Valid string: A1b, lower-case: 1, upper-case: 1` is sent back. |
 | `#$` | The empty frame is discarded. |
 | `#` followed by more than 35 characters without `$` | The incomplete frame is discarded. |
