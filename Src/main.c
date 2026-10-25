@@ -40,6 +40,7 @@ void proccesDmaData(uint8_t sign);
 static uint8_t frame_active = 0U;
 static uint8_t frame_text[DMA_USART2_BUFFER_SIZE];
 static uint8_t frame_length = 0U;
+static uint8_t frame_characters_after_start = 0U;
 static uint8_t lowercase_count = 0U;
 static volatile uint8_t frame_ready = 0U;
 
@@ -137,6 +138,7 @@ void proccesDmaData(uint8_t sign)
 		{
 			frame_active = 1U;
 			frame_length = 0U;
+			frame_characters_after_start = 0U;
 			lowercase_count = 0U;
 		}
 		return;
@@ -146,13 +148,15 @@ void proccesDmaData(uint8_t sign)
 	{
 		/* A new start marker starts a new frame. */
 		frame_length = 0U;
+		frame_characters_after_start = 0U;
 		lowercase_count = 0U;
 		return;
 	}
 
+	frame_characters_after_start++;
 	if (sign == '$')
 	{
-		if (frame_length != 0U)
+		if ((frame_length != 0U) && (frame_characters_after_start <= 35U))
 		{
 			frame_text[frame_length] = '\0';
 			frame_ready = 1U;
@@ -161,8 +165,13 @@ void proccesDmaData(uint8_t sign)
 		return;
 	}
 
-	/* Keep the temporary storage bounded until the task-specific 35-character
-	 * validation is added in a later step. */
+	/* '$' must arrive within the first 35 characters after '#'. */
+	if (frame_characters_after_start >= 35U)
+	{
+		frame_active = 0U;
+		return;
+	}
+
 	if (frame_length >= (DMA_USART2_BUFFER_SIZE - 1U))
 	{
 		frame_active = 0U;

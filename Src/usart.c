@@ -168,8 +168,13 @@ void USART2_CheckDmaReception(void)
 		}
 	}
 
-	/* DMA normal mode stops when the complete buffer was received. */
+	/* The sender transmits at most 20 bytes at once. Restart before another
+	 * transfer could overrun the remaining memory in normal DMA mode. */
 	if (received_bytes >= DMA_USART2_BUFFER_SIZE)
+	{
+		USART2_RestartDmaReception();
+	}
+	else if ((DMA_USART2_BUFFER_SIZE - received_bytes) < 20U)
 	{
 		USART2_RestartDmaReception();
 	}
