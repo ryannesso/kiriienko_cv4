@@ -43,6 +43,7 @@ static uint8_t frame_length = 0U;
 static uint8_t frame_characters_after_start = 0U;
 static uint8_t lowercase_count = 0U;
 static volatile uint8_t frame_ready = 0U;
+volatile uint32_t system_millis = 0U;
 
 
 int main(void)
@@ -63,6 +64,7 @@ int main(void)
 
   USART2_RegisterCallback(proccesDmaData);
 	char tx_message[160];
+	uint32_t last_buffer_report = 0U;
 
   while (1)
   {
@@ -89,6 +91,22 @@ int main(void)
 		  {
 			  USART2_PutBuffer((uint8_t *)tx_message, (uint8_t)length);
 		  }
+	  }
+	  else if (((system_millis - last_buffer_report) >= 2000U) &&
+		  !LL_DMA_IsEnabledChannel(DMA1, LL_DMA_CHANNEL_7))
+	  {
+		  uint16_t used_bytes = USART2_GetRxBufferUsed();
+		  uint16_t load_tenths = (uint16_t)((used_bytes * 1000U) /
+			  DMA_USART2_BUFFER_SIZE);
+		  int length = snprintf(tx_message, sizeof(tx_message),
+			  "Buffer capacity: %u bytes, occupied memory: %u bytes, load [in %%]: %u.%u%%\\r\\n",
+			  (unsigned)DMA_USART2_BUFFER_SIZE, (unsigned)used_bytes,
+			  (unsigned)(load_tenths / 10U), (unsigned)(load_tenths % 10U));
+		  if (length > 0)
+		  {
+			  USART2_PutBuffer((uint8_t *)tx_message, (uint8_t)length);
+		  }
+		  last_buffer_report = system_millis;
 	  }
 
   }

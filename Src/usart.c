@@ -180,6 +180,12 @@ void USART2_CheckDmaReception(void)
 	}
 }
 
+uint16_t USART2_GetRxBufferUsed(void)
+{
+	return DMA_USART2_BUFFER_SIZE -
+			LL_DMA_GetDataLength(DMA1, LL_DMA_CHANNEL_6);
+}
+
 
 
 
