@@ -25,6 +25,15 @@ uint8_t bufferUSART2dma[DMA_USART2_BUFFER_SIZE];
 
 /* Declaration and initialization of callback function */
 static void (* USART2_ProcessData)(uint8_t data) = 0;
+static uint16_t rx_processed_bytes = 0U;
+
+static void USART2_RestartDmaReception(void)
+{
+	LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_6);
+	LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_6, DMA_USART2_BUFFER_SIZE);
+	rx_processed_bytes = 0U;
+	LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_6);
+}
 
 /* Register callback */
 void USART2_RegisterCallback(void *callback)
@@ -140,7 +149,30 @@ void USART2_PutBuffer(uint8_t *buffer, uint8_t length)
  */
 void USART2_CheckDmaReception(void)
 {
-	//type your implementation here
+	uint16_t received_bytes = DMA_USART2_BUFFER_SIZE -
+			LL_DMA_GetDataLength(DMA1, LL_DMA_CHANNEL_6);
+
+	if (received_bytes > rx_processed_bytes)
+	{
+		if (USART2_ProcessData != 0)
+		{
+			while (rx_processed_bytes < received_bytes)
+			{
+				USART2_ProcessData(bufferUSART2dma[rx_processed_bytes]);
+				rx_processed_bytes++;
+			}
+		}
+		else
+		{
+			rx_processed_bytes = received_bytes;
+		}
+	}
+
+	/* DMA normal mode stops when the complete buffer was received. */
+	if (received_bytes >= DMA_USART2_BUFFER_SIZE)
+	{
+		USART2_RestartDmaReception();
+	}
 }
 
 
