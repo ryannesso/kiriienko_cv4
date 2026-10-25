@@ -44,7 +44,6 @@ static uint8_t frame_characters_after_start = 0U;
 static volatile uint8_t lowercase_count = 0U;
 static volatile uint8_t uppercase_count = 0U;
 static volatile uint8_t frame_ready = 0U;
-volatile uint32_t system_millis = 0U;
 
 
 int main(void)
@@ -58,6 +57,10 @@ int main(void)
 
   /* Configure the system clock */
   SystemClock_Config();
+
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+  DWT->CYCCNT = 0U;
+  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
@@ -65,7 +68,7 @@ int main(void)
 
   USART2_RegisterCallback(proccesDmaData);
 	char tx_message[160];
-	uint32_t last_buffer_report = 0U;
+	uint32_t last_buffer_report_cycles = 0U;
 
   while (1)
   {
@@ -94,7 +97,7 @@ int main(void)
 			  USART2_PutBuffer((uint8_t *)tx_message, (uint8_t)length);
 		  }
 	  }
-	  else if (((system_millis - last_buffer_report) >= 2000U) &&
+	  else if (((DWT->CYCCNT - last_buffer_report_cycles) >= 16000000U) &&
 		  !LL_DMA_IsEnabledChannel(DMA1, LL_DMA_CHANNEL_7))
 	  {
 		  uint16_t used_bytes = USART2_GetRxBufferUsed();
@@ -108,7 +111,7 @@ int main(void)
 		  {
 			  USART2_PutBuffer((uint8_t *)tx_message, (uint8_t)length);
 		  }
-		  last_buffer_report = system_millis;
+		  last_buffer_report_cycles = DWT->CYCCNT;
 	  }
 
   }
