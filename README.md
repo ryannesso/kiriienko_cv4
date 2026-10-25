@@ -131,3 +131,17 @@ int main()
  6. V subore "Src/main.c" implementovať periodické odosielanie dát o aktuálnom stave DMA Rx buffera cez USART2 do PC. Formát spravý a frekvencia posielania sú špecifikované inštrukciami v komentári vo while slučke. Implementácia periodického odoielania môže byť priamo vo while slučke poprípade si môžete vytvoriť vlastnú funkciu, ktorú budete vo while slučke volať. V tomto smere máte voľnú ruku. Podstatné je, aby odosielané dáta boli zobraziteľné v PC pomocou terminálu.
  
  7. Odovzdáva sa na začiatku cvičenia 6 a do AIS.
+
+### UART test cases
+
+Configure the PC serial terminal for USART2: 115200 baud, 8 data bits, no parity,
+1 stop bit and no flow control. The board sends the DMA buffer status every two
+seconds.
+
+| Data sent from the terminal | Expected result |
+| --- | --- |
+| `Hello` | The input is ignored because it has no start marker. |
+| `#abc$` | `Valid string: abc, lower-case: 3` is sent back. |
+| `#A1b$` | The message is accepted; only the lowercase `b` is counted at this stage. |
+| `#$` | The empty frame is discarded. |
+| `#` followed by more than 35 characters without `$` | The incomplete frame is discarded. |
