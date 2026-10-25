@@ -152,8 +152,11 @@ void proccesDmaData(uint8_t sign)
 
 	if (sign == '$')
 	{
-		frame_text[frame_length] = '\0';
-		frame_ready = 1U;
+		if (frame_length != 0U)
+		{
+			frame_text[frame_length] = '\0';
+			frame_ready = 1U;
+		}
 		frame_active = 0U;
 		return;
 	}
